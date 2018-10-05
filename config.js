@@ -1,10 +1,10 @@
 const environments = {
     staging: {
-        port: 3000,
+        port: 80,
         envName: 'Staging',
     },
     production: {
-        port: 5000,
+        port: 80,
         envName: 'Production',
     }
 };
