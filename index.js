@@ -1,3 +1,4 @@
+const PORT = process.env.PORT || 5000
 const http = require('http');
 const url = require('url');
 const config = require('./config');
@@ -227,7 +228,7 @@ const server = http.createServer(function (req, res) {
     
 });
 
-server.listen(config.port, function () {
+server.listen(PORT, function () {
     console.log(`Listening on ${config.port} using ${config.envName} environment.`);
 });
 
