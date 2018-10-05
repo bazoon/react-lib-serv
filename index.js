@@ -166,6 +166,8 @@ const server = http.createServer(function (req, res) {
     const trimmedPath = path.replace(/^\/|\/+$/, '');
     const method = req.method.toLocaleLowerCase();
 
+    console.log('A:',  trimmedPath, method);
+
     var queryStringObject = parsedUrl.query;
     
     const routeHandler = findRouteFor(trimmedPath, method);
