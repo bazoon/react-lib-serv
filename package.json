@@ -15,5 +15,8 @@
   "bugs": {
     "url": "https://github.com/bazoon/react-lib-serv/issues"
   },
-  "homepage": "https://github.com/bazoon/react-lib-serv#readme"
+  "homepage": "https://github.com/bazoon/react-lib-serv#readme",
+  "dependencies": {
+    "faker": "^4.1.0"
+  }
 }
