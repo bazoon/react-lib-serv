@@ -1,4 +1,4 @@
-const PORT = process.env.PORT || 5000
+const PORT = process.env.PORT || 3000
 const http = require('http');
 const url = require('url');
 const config = require('./config');
@@ -41,10 +41,18 @@ const router = {
             callback(200, projectsData);
         },
         list: function (data, callback) {
-            let payload = projectsData.data;
+            let payload = projectsData.data.slice();
+
+
             const filterParams = data.payload && data.payload.filterParams;
-            const sort = data.payload && payload.sortParams;
+            const sort = data.payload && data.payload.sortParams;
+            const hasSort = Object.keys(sort).length > 0;
             const filterKeys = Object.keys(filterParams);
+            
+            const pageSize = data.payload.pageSize;
+            const currentPage = data.payload.currentPage;
+
+
 
             const filters = filterKeys.reduce(function (acc, k) {
                 acc.push({
@@ -55,7 +63,6 @@ const router = {
                 return acc;
             }, []);
 
-            console.log(JSON.stringify(filters))
 
             if (filters && filters.length > 0) {
 
@@ -74,31 +81,34 @@ const router = {
                             case helpers.isDate(fieldValue):
                                 return helpers.compareDates(fieldValue, value, ordering);
                             default:
-                                console.log(fieldValue, value);
                                 return helpers.compareStrings(fieldValue, value, ordering);
                         }
-
-                        
                     });
-
                 });
             }
 
-            // if (data.sort) {
-            //     payload.sort(sorter);
-            // }
+            if (hasSort) {
+                payload.sort(sorter);
+            }
 
+            
+            const total = payload.length;
+
+            if (pageSize) {
+                payload = payload.slice(currentPage * pageSize, currentPage * pageSize + pageSize);
+            }
 
 
             callback(200, {
                 data: payload,
+                total: total,
                 summary: projectsData.summary
             });
 
 
             function sorter(a, b) {
-                let item1 = a[data.sort.property];
-                let item2 = b[data.sort.property];
+                let item1 = a[sort.property];
+                let item2 = b[sort.property];
                 let r;
                 
                 switch(true) {
@@ -112,7 +122,7 @@ const router = {
                         r = item1.localeCompare(item2);
                 }
 
-                if (data.sort.direction === "desc") {
+                if (sort.direction === "desc") {
                     r = r * (-1);
                 }
 
@@ -120,11 +130,30 @@ const router = {
 
             }
         },
+        sync: function (data, callback) {
+            const items = data.payload.items;
+
+            items.forEach((item) => {
+                const project = projectsData.data.find((it) => item.id === it.id);
+                const fields = Object.keys(item);
+
+                fields.forEach(function (field) {
+                   project[field] = item[field]; 
+                });
+
+
+            });
+
+            callback(200, {});
+        },
         post: function (data, callback) {
             const payload = data.payload;
-            
+            console.log(payload);
+
             if (payload.action === "list") {
                 return router.projects.list(data, callback);
+            } else if (payload.action === "sync") {
+                return router.projects.sync(data, callback);
             }
 
             const project = projectsData.data.find((item) => item.id === payload.id);
@@ -156,18 +185,13 @@ const router = {
     }
 }
 
-
-
-
-
 const server = http.createServer(function (req, res) {
     const parsedUrl = url.parse(req.url, true);
     const path = parsedUrl.pathname;
     const trimmedPath = path.replace(/^\/|\/+$/, '');
     const method = req.method.toLocaleLowerCase();
 
-    console.log('A:',  trimmedPath, method);
-
+    
     var queryStringObject = parsedUrl.query;
     
     const routeHandler = findRouteFor(trimmedPath, method);
@@ -186,22 +210,6 @@ const server = http.createServer(function (req, res) {
 
     const keys = Object.keys(queryStringObject);
 
-    // console.log(queryStringObject)
-    // const filterKeys = keys.filter((k) => k.indexOf('filter[') !== -1);
-
-    // const filters = filterKeys.map((k) => {
-    //     let startIndex = k.indexOf('[');
-    //     let endIndex = k.indexOf(']');
-    //     let field = k.slice(startIndex + 1, endIndex);
-
-    //     return {
-    //         field: field,
-    //         value: queryStringObject[k]
-    //     }
-    // });
-
-    // data.filters = filters;
-    // console.log(data.filters)
     
 
     var buffer = '';
@@ -215,10 +223,12 @@ const server = http.createServer(function (req, res) {
 
         
         routeHandler(data, function (statusCode, payload) {
-            res.setHeader('Content-type', 'applications/json');
+            res.setHeader('Content-type', 'applications/json;charset=utf-8');
             res.setHeader('Access-Control-Allow-Origin', '*');
             res.setHeader('Access-Control-Allow-Methods', 'POST, GET, PUT, DELETE, OPTIONS');
             res.setHeader('Access-Control-Allow-Headers', 'origin, content-type, accept');
+            
+
             res.writeHead(statusCode);
             res.end(JSON.stringify(payload));
         });

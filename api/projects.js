@@ -2,7 +2,7 @@ const faker = require('faker');
 const leaders = require('./leaders');
 
 
-const count = 50;
+const count = 700;
 const items = [];
 
 function getLeader() {
@@ -20,8 +20,8 @@ for (let i = 0; i < count; i++ ) {
         price2: faker.random.number(),
         some: faker.lorem.words(200),
         startDate: faker.date.future(),
-        some1: faker.lorem.words(10),
-        some2: faker.lorem.words(20)
+        // some1: faker.lorem.words(10),
+        // some2: faker.lorem.words(20)
     });
 }
 
